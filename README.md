@@ -6,7 +6,7 @@ This project conducts a comparative analysis of DDR4, DDR5, and HBM2 memory tech
 
 ## Approach
 
-This repository implements **Approach 2: gem5 Built-in DDR5 Model** (branch: `a2_gem5ddr5`).
+This **branch** implements **Approach 2: gem5 Built-in DDR5 Model**.
 
 Since DRAMSim3 does not natively support the DDR5 protocol, this approach uses a hybrid strategy:
 
