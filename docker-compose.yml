@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  cad-experiment:
+    build: .
+    container_name: cad-memory-study
+    volumes:
+      # Mount current directory for development
+      - .:/workspace
+      # Mount results directory for persistent storage
+      - ./results:/workspace/results
+      # Mount logs directory
+      - ./logs:/workspace/logs
+    environment:
+      - GEM5_HOME=/opt/gem5
+      - DRAMSIM3_HOME=/opt/dramsim3
+      - PYTHONPATH=/opt/gem5/src/python:/opt/dramsim3
+    working_dir: /workspace
+    # Resource limits for 32GB RAM / i9 system
+    deploy:
+      resources:
+        limits:
+          cpus: '8.0'
+          memory: 28G
+        reservations:
+          cpus: '4.0'
+          memory: 16G
+    # Keep container running
+    tty: true
+    stdin_open: true
+    # Network mode for better performance
+    network_mode: host
+
+  # Optional: Jupyter notebook for data analysis
+  jupyter:
+    build: .
+    container_name: cad-jupyter
+    ports:
+      - "8888:8888"
+    volumes:
+      - .:/workspace
+      - ./results:/workspace/results
+    environment:
+      - GEM5_HOME=/opt/gem5
+      - DRAMSIM3_HOME=/opt/dramsim3
+    command: >
+      bash -c "jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token='' --NotebookApp.password=''"
+    depends_on:
+      - cad-experiment
