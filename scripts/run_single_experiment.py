@@ -178,6 +178,11 @@ def extract_metrics(stats_file):
         if 'avg_bandwidth' not in metrics:
             metrics['avg_bandwidth'] = metrics['avg_read_bandwidth'] + metrics['avg_write_bandwidth']
 
+    # Note if row buffer hit rate is not available (gem5 built-in DRAM)
+    if 'row_buffer_hit_rate' not in metrics:
+        metrics['row_buffer_hit_rate'] = None
+        metrics['_note'] = 'Row buffer hit rate not available (gem5 built-in DRAM model)'
+
     return metrics
 
 def main():

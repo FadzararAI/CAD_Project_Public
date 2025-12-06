@@ -2,33 +2,23 @@
 
 ## Overview
 
-This project conducts a comparative analysis of DDR4, DDR5, and HBM2 memory technologies, evaluating their performance in terms of execution time and bandwidth utilization when running TinyML and Conv2D machine learning workloads. The experiments are performed using the gem5 simulator with DRAMSim3 memory simulator on RISC-V architecture.
+This project conducts a comparative analysis of DDR4, DDR5, and HBM2 memory technologies, evaluating their performance in terms of execution time and bandwidth utilization when running TinyML and Conv2D machine learning workloads. The experiments are performed using the gem5 simulator with RISC-V architecture.
 
 ## Approach
 
-This **branch** uses **DRAMSim3 with DDR5-like configurations** for all memory types.
+This repository implements **Approach 2: gem5 Built-in DDR5 Model** (branch: `a2_gem5ddr5`).
 
-Since DRAMSim3 does not natively support the DDR5 protocol, DDR5 is modeled using DDR4 protocol with DDR5-accurate timing parameters. This approach provides consistent metrics across all memory types.
+Since DRAMSim3 does not natively support the DDR5 protocol, this approach uses a hybrid strategy:
 
-| Memory Type | Protocol | Timing Parameters | Full Metrics |
-|-------------|----------|-------------------|--------------|
-| **DDR4** | DDR4 (native) | DDR4 standard | Yes |
-| **DDR5** | DDR4 (emulated) | DDR5-accurate (CL, tRCD, tRP, tRAS) | Yes |
-| **HBM2** | HBM2 (native) | HBM2 standard | Yes |
+| Memory Type | Simulation Backend | Metrics Available |
+|-------------|-------------------|-------------------|
+| **DDR4** | DRAMSim3 | Full metrics (row buffer hit rate, bank-level stats, power) |
+| **DDR5** | gem5 built-in DDR5_4400_4x8 | Basic metrics (execution time, bandwidth, latency) |
+| **HBM2** | DRAMSim3 | Full metrics (row buffer hit rate, bank-level stats, power) |
 
-### DDR5 Configuration Notes
+### Alternative Approach
 
-The DDR5 configurations use DDR4 protocol with the following DDR5-accurate parameters preserved:
-
-| Parameter | DDR5-4800 | DDR5-5600 | DDR5-6400 |
-|-----------|-----------|-----------|-----------|
-| Clock (tCK) | 0.417 ns | 0.357 ns | 0.312 ns |
-| CAS Latency (CL) | 40 | 46 | 52 |
-| Bank Groups | 8 | 8 | 8 |
-| Banks per Group | 4 | 4 | 4 |
-| Voltage (VDD) | 1.1V | 1.1V | 1.1V |
-
-**Compromises:** Burst length reduced from 16 to 8 (to match gem5's 64-byte cache line), DDR4 command scheduling used instead of native DDR5, sub-channels not modeled.
+**Approach 1** (documented in `A1.md`) uses DRAMSim3 with DDR4 protocol and DDR5-accurate timing parameters for all memory types. This provides consistent metrics across all memory types but compromises DDR5 protocol accuracy (burst length reduced from 16 to 8, DDR4 command scheduling).
 
 ## Project Goals
 
@@ -134,12 +124,13 @@ CAD/
 ├── docker-compose.yml         # Container orchestration
 ├── run_experiment.sh          # Main experiment runner
 ├── README.md                  # This file
-├── A1.md                      # DDR5 configuration limitations documentation
+├── A1.md                      # Approach 1 documentation (DRAMSim3 DDR5)
 │
 ├── configs/                   # gem5 and DRAMSim3 configurations
 │   ├── riscv_cpu.py           # RISC-V O3CPU configuration
 │   ├── ddr4_config.py         # DDR4 with DRAMSim3
-│   ├── ddr5_config.py         # DDR5 with DRAMSim3 (DDR4 protocol + DDR5 timings)
+│   ├── ddr5_config.py         # DDR5 with DRAMSim3 (Approach 1)
+│   ├── ddr5_gem5_config.py    # DDR5 with gem5 built-in (Approach 2)
 │   ├── hbm2_config.py         # HBM2 with DRAMSim3
 │   └── dramsim3/
 │       └── ddr5/              # DRAMSim3 DDR5 timing configs
@@ -215,9 +206,9 @@ Creates performance comparison charts and visualizations.
 
 | Type | Speed Range | Configuration |
 |------|-------------|---------------|
-| **DDR4** | 2133-3200 MHz | DRAMSim3 native DDR4 |
-| **DDR5** | 4800-6400 MHz | DRAMSim3 with DDR5-like timings |
-| **HBM2** | 1-4 GB stacks | DRAMSim3 native HBM2 |
+| **DDR4** | 2133-3200 MHz | DRAMSim3 with full metrics |
+| **DDR5** | 4400 MHz (gem5 built-in) | gem5 DDR5_4400_4x8 model |
+| **HBM2** | 1-4 GB stacks | DRAMSim3 with full metrics |
 
 ### Benchmarks
 
@@ -226,15 +217,17 @@ Creates performance comparison charts and visualizations.
 
 ### Metrics Collected
 
-All memory types provide consistent metrics through DRAMSim3:
+| Metric | DDR4 | DDR5 | HBM2 |
+|--------|------|------|------|
+| Execution time (sim_seconds) | Yes | Yes | Yes |
+| Average bandwidth (GB/s) | Yes | Yes | Yes |
+| Average memory latency (ns) | Yes | Yes | Yes |
+| Cache hit rates (L1, L2) | Yes | Yes | Yes |
+| Row buffer hit rate | Yes | No* | Yes |
+| Bank-level statistics | Yes | No* | Yes |
+| Power consumption | Yes | No* | Yes |
 
-- Execution time (sim_seconds)
-- Average bandwidth (GB/s)
-- Average memory latency (ns)
-- Cache hit rates (L1, L2)
-- Row buffer hit rate
-- Bank-level statistics
-- Power consumption estimates
+*DDR5 using gem5 built-in model does not provide these detailed metrics.
 
 ## References
 

@@ -102,7 +102,13 @@ run_all_experiments() {
     # Run experiments
     for memory_type in "${memory_types[@]}"; do
         for benchmark in "${benchmarks[@]}"; do
-            run_experiment $memory_type $benchmark "configs/${memory_type}_config.py"
+            # DDR5 uses gem5 built-in model (ddr5_gem5_config.py)
+            # DDR4 and HBM2 use DRAMSim3 for detailed metrics
+            if [ "$memory_type" == "ddr5" ]; then
+                run_experiment $memory_type $benchmark "configs/ddr5_gem5_config.py"
+            else
+                run_experiment $memory_type $benchmark "configs/${memory_type}_config.py"
+            fi
         done
     done
 }
